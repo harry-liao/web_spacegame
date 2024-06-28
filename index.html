@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f3f4f6;
+        }
+        #gameCanvas {
+            display: block;
+            background-color: black;
+            background-image: url(image/8bit_galaxy_background.png); 
+            background-size: auto;
+        }
+        .enemy {
+            fill: #d1d5db;
+            stroke: #9ca3af;
+            stroke-width: 2;
+        }
+        .player {
+            background-image: url(image/spaceship.png);
+            background-repeat: repeat;
+            background-position: top left;
+            background-size: cover;
+        }
+        .bullet {
+            fill: #60a5fa;
+        }
+        .reset-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #ffffff;
+            border: 2px solid #000000;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <button class="reset-button" id="resetButton">Reset</button>
+    <script type="module">
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 50,
+            width: 30,
+            height: 30,
+            color: '#ef4444',
+            draw() {
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - this.width / 2, this.y + this.height);
+                ctx.lineTo(this.x + this.width / 2, this.y + this.height);
+                ctx.closePath();
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.strokeStyle = '#ef4444';
+                ctx.stroke();
+            }
+        };
+
+        let bullets = [];
+        let enemies = [];
+
+        function createEnemies() {
+            enemies = [];
+            const enemyWidth = 50;
+            const enemyHeight = 30;
+            const padding = 10;
+            const offsetTop = 50;
+            const offsetLeft = (canvas.width - (enemyWidth + padding) * 5) / 2;
+
+            for (let i = 0; i < 5; i++) {
+                enemies.push({
+                    x: offsetLeft + i * (enemyWidth + padding),
+                    y: offsetTop,
+                    width: enemyWidth,
+                    height: enemyHeight,
+                    color: '#d1d5db',
+                    hit: false
+                });
+            }
+        }
+
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                if (!enemy.hit) {
+                    ctx.fillStyle = enemy.color;
+                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                    ctx.strokeStyle = '#9ca3af';
+                    ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                }
+            });
+        }
+
+        function drawBullets() {
+            bullets.forEach(bullet => {
+                ctx.fillStyle = '#60a5fa';
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+        }
+
+        function updateBullets() {
+            bullets.forEach((bullet, index) => {
+                bullet.y -= bullet.speed;
+                if (bullet.y < 0) {
+                    bullets.splice(index, 1);
+                }
+            });
+        }
+
+        function detectCollisions() {
+            bullets.forEach((bullet, bulletIndex) => {
+                enemies.forEach((enemy, enemyIndex) => {
+                    if (!enemy.hit && bullet.x < enemy.x + enemy.width && bullet.x + bullet.width > enemy.x && bullet.y < enemy.y + enemy.height && bullet.y + bullet.height > enemy.y) {
+                        enemy.hit = true;
+                        bullets.splice(bulletIndex, 1);
+                    }
+                });
+            });
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            player.draw();
+            drawEnemies();
+            drawBullets();
+            updateBullets();
+            detectCollisions();
+            requestAnimationFrame(gameLoop);
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            player.x = e.clientX;
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                bullets.push({
+                    x: player.x - 2.5,
+                    y: player.y,
+                    width: 5,
+                    height: 10,
+                    speed: 5
+                });
+            }
+        });
+
+        document.getElementById('resetButton').addEventListener('click', () => {
+            bullets = [];
+            createEnemies();
+        });
+
+        createEnemies();
+        gameLoop();
+    </script>
+</body>
+</html>
